@@ -24,7 +24,7 @@ function makeSide(random) {
   return { life: MAX_LIFE, hand: [], deck: shuffle(buildDeck(), random), lanes: [[], [], []], embers: 1 };
 }
 
-function effectiveAttack(creature, laneCreatures) {
+export function effectiveAttack(creature, laneCreatures) {
   const suits = new Set(laneCreatures.map((c) => c.suit));
   const kindled = suits.has('flame') && suits.has('thorn');
   return creature.attack + (kindled ? 1 : 0);
@@ -42,6 +42,7 @@ export function createWorld(random) {
     damageDealt: 0,
     damageTaken: 0,
     combos: [],
+    highTideThisTurn: false,
     playedSuitsThisTurn: [],
     player: makeSide(random),
     enemy: makeSide(random),
@@ -70,6 +71,7 @@ export function createWorld(random) {
     state.player.embers = Math.min(state.round, MAX_EMBERS);
     state.enemy.embers = Math.min(state.round, MAX_EMBERS);
     state.frozen = [false, false, false];
+    state.highTideThisTurn = false;
     state.playedSuitsThisTurn = [];
     drawCard('player');
     drawCard('enemy');
@@ -88,10 +90,11 @@ export function createWorld(random) {
     state.damageDealt = 0;
     state.damageTaken = 0;
     state.combos = [];
+    state.highTideThisTurn = false;
     state.playedSuitsThisTurn = [];
     state.player = makeSide(random);
     state.enemy = makeSide(random);
-    for (let i = 0; i < START_HAND; i += 1) {
+    for (let i = 0; i < START_HAND - 1; i += 1) {
       drawCard('player');
       drawCard('enemy');
     }
@@ -143,7 +146,8 @@ export function createWorld(random) {
 
   function checkCombos(side) {
     const suits = new Set(state.playedSuitsThisTurn);
-    if (suits.has('tide') && suits.has('star') && !state.combos.includes('High Tide')) {
+    if (suits.has('tide') && suits.has('star') && !state.highTideThisTurn) {
+      state.highTideThisTurn = true;
       state.combos.push('High Tide');
       drawCard(side);
       say('High Tide! Tide + Star in one turn — draw a card.');
@@ -250,6 +254,9 @@ export function createWorld(random) {
   function endPlayerTurn(aiTakeTurn) {
     if (state.over || state.phase !== 'player') return;
     state.phase = 'enemy';
+    // The Duchess's suits are her own turn: clear the player's suits so her
+    // Tide cannot combine with the player's Star (or vice versa).
+    state.playedSuitsThisTurn = [];
     aiTakeTurn(state);
     checkEnd();
     if (!state.over) {

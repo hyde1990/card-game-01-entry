@@ -2,6 +2,7 @@
 // text stays legible at thumbnail size; suits are colour AND shape (a coloured
 // badge with a glyph), costs and attack/health are big and high-contrast.
 import { cardById, SUITS, MAX_LIFE } from './config.js';
+import { effectiveAttack } from './world.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
@@ -50,7 +51,8 @@ function cardFace(card, { affordable = true, small = false } = {}) {
 }
 
 // A creature standing in a lane: smaller card with live attack/health.
-function laneCreature(creature, side) {
+// Attack shown is the Kindled-boosted value combat actually uses.
+function laneCreature(creature, laneCreatures) {
   const card = cardById(creature.cardId);
   const suit = SUITS[creature.suit];
   const node = el('div', `lane-card suit-${creature.suit}${creature.ability === 'guard' ? ' guard' : ''}`);
@@ -62,7 +64,7 @@ function laneCreature(creature, side) {
     el('div', 'lane-stats'),
   );
   const stats = node.querySelector('.lane-stats');
-  stats.append(el('span', 'atk', `⚔ ${creature.attack}`), el('span', 'hp', `♥ ${creature.health}`));
+  stats.append(el('span', 'atk', `⚔ ${effectiveAttack(creature, laneCreatures)}`), el('span', 'hp', `♥ ${creature.health}`));
   if (creature.ability === 'guard') node.append(el('div', 'guard-tag', '🛡 GUARD'));
   node.title = `${creature.name} — ${card.text}`;
   return node;
@@ -136,10 +138,10 @@ export function createRenderer(root) {
       laneEl.addEventListener('click', () => onLaneClick && onLaneClick(lane));
       const head = el('div', 'lane-head', `LANE ${lane + 1}${state.frozen[lane] ? ' ❄ FROZEN' : ''}`);
       const foeSide = el('div', 'lane-side foe-side');
-      for (const creature of enemy.lanes[lane]) foeSide.append(laneCreature(creature, 'enemy'));
+      for (const creature of enemy.lanes[lane]) foeSide.append(laneCreature(creature, enemy.lanes[lane]));
       const mid = el('div', 'lane-mid', '⚔');
       const mySide = el('div', 'lane-side my-side');
-      for (const creature of player.lanes[lane]) mySide.append(laneCreature(creature, 'player'));
+      for (const creature of player.lanes[lane]) mySide.append(laneCreature(creature, player.lanes[lane]));
       laneEl.append(head, foeSide, mid, mySide);
       board.append(laneEl);
     }
