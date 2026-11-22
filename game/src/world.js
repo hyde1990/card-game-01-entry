@@ -115,14 +115,16 @@ export function createWorld(random) {
       const targetLane = lane ?? 0;
       const target = them.lanes[targetLane][0];
       if (target) {
+        const dealt = Math.min(2, target.health);
         target.health -= 2;
         say(`${who} cast Ember Burst: ${target.name} takes 2.`);
-        if (side === 'player') state.damageDealt += 2;
+        if (side === 'player') state.damageDealt += dealt;
       } else {
+        const dealt = Math.min(2, them.life);
         them.life = Math.max(0, them.life - 2);
         say(`${who} cast Ember Burst: ${foe === 'enemy' ? 'the Duchess' : 'you'} take 2.`);
-        if (side === 'player') state.damageDealt += 2;
-        else state.damageTaken += 2;
+        if (side === 'player') state.damageDealt += dealt;
+        else state.damageTaken += dealt;
       }
     } else if (card.effect === 'heal') {
       me.life = Math.min(MAX_LIFE, me.life + 3);
@@ -171,7 +173,7 @@ export function createWorld(random) {
     if (!card || who.embers < card.cost) return null;
     if (card.kind === 'creature' && (lane === null || lane === undefined || lane < 0 || lane >= LANES)) return null;
     if (card.kind === 'creature' && who.lanes[lane].length >= MAX_LANE_CREATURES) return null;
-    if (card.kind === 'spell' && card.effect !== 'heal' && card.effect !== 'starfall' && (lane === null || lane === undefined)) return null;
+    if (card.kind === 'spell' && card.effect !== 'heal' && card.effect !== 'starfall' && (lane === null || lane === undefined || lane < 0 || lane >= LANES)) return null;
 
     who.hand.splice(handIndex, 1);
     who.embers -= card.cost;
@@ -218,9 +220,10 @@ export function createWorld(random) {
         say(`${hit.from === 'player' ? 'Your' : 'Her'} creature strikes lane ${hit.lane + 1} for ${hit.damage}.`);
       } else {
         const side = state[hit.face];
+        const dealt = Math.min(hit.damage, side.life);
         side.life = Math.max(0, side.life - hit.damage);
-        if (hit.face === 'enemy') state.damageDealt += hit.damage;
-        else state.damageTaken += hit.damage;
+        if (hit.face === 'enemy') state.damageDealt += dealt;
+        else state.damageTaken += dealt;
         say(`${hit.from === 'player' ? 'You strike' : 'The Duchess strikes'} lane ${hit.lane + 1} for ${hit.damage} to the face.`);
       }
     }

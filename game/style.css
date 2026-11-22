@@ -21,6 +21,9 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 .life.foe .life-fill { background: linear-gradient(90deg, #8a5f05, #e8a91c); }
 
 #intent { margin: 2px 6px 0; font-style: italic; color: #d8c08a; font-size: 14px; min-height: 18px; }
+.combo-line { margin: 0 6px; font-size: 14px; font-weight: bold; color: #7ec8e3; min-height: 0; }
+.combo-line:not(:empty) { margin-top: 1px; }
+.kindled-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: #e8890c; color: #241610; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
 
 /* --- Hands --- */
 .hand-label { font-size: 14px; color: #c9a86a; letter-spacing: 1px; margin: 2px 0 4px; }
@@ -36,8 +39,8 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 .card.selected { transform: translateY(-14px) scale(1.06); box-shadow: 0 0 0 3px #ffd76a, 0 8px 18px rgba(0,0,0,.6); outline: 3px solid #ffd76a; }
 .card.unaffordable { opacity: .55; filter: grayscale(.4); }
 @keyframes deal-in { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.cost { position: absolute; top: -8px; left: -8px; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd76a, #e8890c); color: #241610; font-size: 19px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #fff3c4; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
-.suit-badge { display: inline-flex; align-items: center; gap: 4px; color: #fff; border-radius: 12px; padding: 2px 8px; font-size: 12px; font-weight: bold; letter-spacing: .5px; }
+.cost { position: absolute; top: 0; left: 0; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd76a, #e8890c); color: #241610; font-size: 19px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #fff3c4; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.suit-badge { display: inline-flex; align-items: center; gap: 4px; color: #fff; border-radius: 12px; padding: 2px 8px; font-size: 12px; font-weight: bold; letter-spacing: .5px; margin-left: 24px; }
 .suit-glyph { font-size: 14px; }
 .card-name { font-size: 14px; font-weight: bold; margin: 3px 0 1px; line-height: 1.15; min-height: 18px; }
 .card-art { font-size: 22px; text-align: center; line-height: 1.05; }

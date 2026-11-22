@@ -50,8 +50,11 @@ function cardFace(card, { affordable = true, small = false } = {}) {
   return node;
 }
 
-// A creature standing in a lane: smaller card with live attack/health.
-// Attack shown is the Kindled-boosted value combat actually uses.
+// A lane is Kindled when its creatures mix Flame and Thorn: +1 attack each.
+function laneKindled(creatures) {
+  const suits = new Set(creatures.map((c) => c.suit));
+  return suits.has('flame') && suits.has('thorn');
+}
 function laneCreature(creature, laneCreatures) {
   const card = cardById(creature.cardId);
   const suit = SUITS[creature.suit];
@@ -84,6 +87,7 @@ function lifeBar(life, who) {
 export function createRenderer(root) {
   const hud = root.querySelector('#hud');
   const intent = root.querySelector('#intent');
+  const combos = root.querySelector('#combos');
   const enemyHand = root.querySelector('#enemy-hand');
   const board = root.querySelector('#board');
   const playerHand = root.querySelector('#player-hand');
@@ -119,6 +123,11 @@ export function createRenderer(root) {
 
     intent.textContent = state.intent || '';
 
+    // The combo line: High Tide fires once per turn (Tide + Star played in one
+    // turn draws a card) — shown here while it is live this turn. Kindled is
+    // a standing lane bonus, so it gets its badge on the lane itself, below.
+    if (combos) combos.textContent = state.highTideThisTurn ? '🌊 HIGH TIDE — Tide + Star in one turn: drew a card' : '';
+
     // The Duchess's hand: face-down backs with a count, plus her played cards
     // flip face-up on the table as she plays them.
     enemyHand.replaceChildren();
@@ -137,6 +146,9 @@ export function createRenderer(root) {
       laneEl.setAttribute('aria-label', `Lane ${lane + 1}`);
       laneEl.addEventListener('click', () => onLaneClick && onLaneClick(lane));
       const head = el('div', 'lane-head', `LANE ${lane + 1}${state.frozen[lane] ? ' ❄ FROZEN' : ''}`);
+      if (laneKindled(player.lanes[lane]) || laneKindled(enemy.lanes[lane])) {
+        head.append(el('span', 'kindled-badge', '🔥 KINDLED +1'));
+      }
       const foeSide = el('div', 'lane-side foe-side');
       for (const creature of enemy.lanes[lane]) foeSide.append(laneCreature(creature, enemy.lanes[lane]));
       const mid = el('div', 'lane-mid', '⚔');
