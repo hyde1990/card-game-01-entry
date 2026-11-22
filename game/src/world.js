@@ -2,6 +2,7 @@
 // win and loss. Pure rules, no DOM: the renderer and the shot autopilot both
 // drive the game through this module, so a screenshot is a real game state.
 import { buildDeck, cardById, LANES, MAX_EMBERS, MAX_HAND, MAX_LANE_CREATURES, MAX_LIFE, START_HAND } from './config.js';
+import { checkCombos, effectiveAttack } from './combos.js';
 import { shuffle } from './random.js';
 
 let nextUid = 1;
@@ -24,12 +25,6 @@ function makeSide(random) {
   return { life: MAX_LIFE, hand: [], deck: shuffle(buildDeck(), random), lanes: [[], [], []], embers: 1 };
 }
 
-export function effectiveAttack(creature, laneCreatures) {
-  const suits = new Set(laneCreatures.map((c) => c.suit));
-  const kindled = suits.has('flame') && suits.has('thorn');
-  return creature.attack + (kindled ? 1 : 0);
-}
-
 export function createWorld(random) {
   const state = {
     round: 0,
@@ -44,6 +39,9 @@ export function createWorld(random) {
     combos: [],
     highTideThisTurn: false,
     playedSuitsThisTurn: [],
+    // Staging flag (shots only): index of the hand card shown mid-deal in a
+    // screenshot. Null in real play; the renderer reads it, the rules ignore it.
+    arrivingHandIndex: null,
     player: makeSide(random),
     enemy: makeSide(random),
   };
@@ -92,6 +90,7 @@ export function createWorld(random) {
     state.combos = [];
     state.highTideThisTurn = false;
     state.playedSuitsThisTurn = [];
+    state.arrivingHandIndex = null;
     state.player = makeSide(random);
     state.enemy = makeSide(random);
     for (let i = 0; i < START_HAND - 1; i += 1) {
@@ -146,24 +145,6 @@ export function createWorld(random) {
     }
   }
 
-  function checkCombos(side) {
-    const suits = new Set(state.playedSuitsThisTurn);
-    if (suits.has('tide') && suits.has('star') && !state.highTideThisTurn) {
-      state.highTideThisTurn = true;
-      state.combos.push('High Tide');
-      drawCard(side);
-      say('High Tide! Tide + Star in one turn — draw a card.');
-    }
-    // Kindled is a standing lane bonus, checked at combat time.
-    for (let l = 0; l < LANES; l += 1) {
-      const laneSuits = new Set(state[side].lanes[l].map((c) => c.suit));
-      if (laneSuits.has('flame') && laneSuits.has('thorn') && !state.combos.includes(`Kindled lane ${l + 1}`)) {
-        state.combos.push(`Kindled lane ${l + 1}`);
-        say(`Kindled! Flame + Thorn share lane ${l + 1}: +1 attack.`);
-      }
-    }
-  }
-
   function playCard(side, handIndex, lane) {
     if (state.over || state.phase !== 'player' && side === 'player') return null;
     const who = state[side];
@@ -187,7 +168,7 @@ export function createWorld(random) {
     } else {
       castSpell(side, card, lane);
     }
-    checkCombos(side);
+    checkCombos(state, side, drawCard, say);
     checkEnd();
     return card;
   }

@@ -20,7 +20,9 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 .life-fill { height: 100%; background: linear-gradient(90deg, #e5484d, #ff8a5c); transition: width .4s ease; }
 .life.foe .life-fill { background: linear-gradient(90deg, #8a5f05, #e8a91c); }
 
-#intent { margin: 2px 6px 0; font-style: italic; color: #d8c08a; font-size: 14px; min-height: 18px; }
+#intent { display: flex; align-items: baseline; gap: 10px; margin: 2px 6px 0; padding: 3px 10px; background: linear-gradient(90deg, #3a2440, #2a1630); border: 1px solid #8a5f8a; border-radius: 6px; font-size: 15px; font-weight: bold; color: #e8d5a0; min-height: 24px; }
+.intent-label { color: #e0a0e8; letter-spacing: 1px; white-space: nowrap; }
+.intent-body { font-style: italic; font-weight: normal; }
 .combo-line { margin: 0 6px; font-size: 14px; font-weight: bold; color: #7ec8e3; min-height: 0; }
 .combo-line:not(:empty) { margin-top: 1px; }
 .kindled-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: #e8890c; color: #241610; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
@@ -39,13 +41,18 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 .card.selected { transform: translateY(-14px) scale(1.06); box-shadow: 0 0 0 3px #ffd76a, 0 8px 18px rgba(0,0,0,.6); outline: 3px solid #ffd76a; }
 .card.unaffordable { opacity: .55; filter: grayscale(.4); }
 @keyframes deal-in { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* A card caught mid-deal (screenshots only): the deal-in animation paused
+   halfway via a negative delay — a fixed point in the animation, so the frame
+   is deterministic and the still shows a card sliding in. Linear timing so
+   the midpoint is exactly 50% (opacity .5, 12px down), not the eased ~80%. */
+.card.mid-deal { animation: deal-in .35s linear paused; animation-delay: -175ms; }
 .cost { position: absolute; top: 0; left: 0; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd76a, #e8890c); color: #241610; font-size: 19px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #fff3c4; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 .suit-badge { display: inline-flex; align-items: center; gap: 4px; color: #fff; border-radius: 12px; padding: 2px 8px; font-size: 12px; font-weight: bold; letter-spacing: .5px; margin-left: 24px; }
 .suit-glyph { font-size: 14px; }
-.card-name { font-size: 14px; font-weight: bold; margin: 3px 0 1px; line-height: 1.15; min-height: 18px; }
+.card-name { font-size: 15px; font-weight: bold; margin: 3px 0 1px; line-height: 1.15; min-height: 18px; }
 .card-art { font-size: 22px; text-align: center; line-height: 1.05; }
 .card-text { font-size: 11px; font-style: italic; color: #5a4632; line-height: 1.2; min-height: 20px; }
-.card-stats { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; border-top: 2px solid var(--suit); padding-top: 2px; margin-top: 2px; }
+.card-stats { display: flex; justify-content: space-between; font-size: 17px; font-weight: bold; border-top: 2px solid var(--suit); padding-top: 2px; margin-top: 2px; }
 .card-stats .atk { color: #b3261e; }
 .card-stats .hp { color: #1d7a33; }
 .card-kind { font-size: 14px; font-weight: bold; color: var(--suit-dark); letter-spacing: 2px; text-align: center; border-top: 2px solid var(--suit); padding-top: 6px; margin-top: 6px; }
@@ -62,8 +69,8 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 @keyframes snap-in { from { transform: scale(.7) translateY(-12px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 .lane-card.guard { box-shadow: 0 0 0 2px #ffd76a, 0 3px 8px rgba(0,0,0,.5); }
 .lane-glyph { font-size: 20px; line-height: 1.1; }
-.lane-name { font-size: 12px; font-weight: bold; line-height: 1.1; min-height: 22px; }
-.lane-stats { display: flex; justify-content: center; gap: 12px; font-size: 15px; font-weight: bold; }
+.lane-name { font-size: 13px; font-weight: bold; line-height: 1.1; min-height: 22px; }
+.lane-stats { display: flex; justify-content: center; gap: 12px; font-size: 16px; font-weight: bold; }
 .lane-stats .atk { color: #b3261e; }
 .lane-stats .hp { color: #1d7a33; }
 .guard-tag { font-size: 10px; font-weight: bold; color: #8a5f05; letter-spacing: 1px; }
@@ -85,6 +92,15 @@ body { font-family: Georgia, 'Times New Roman', serif; color: #f3e6c8; }
 .rules { font-size: 16px; line-height: 1.45; color: #f3e6c8; }
 .combos { font-size: 14px; color: #ffd76a; }
 .score-line { font-size: 19px; font-weight: bold; }
+/* The end-screen score breakdown: rounds + damage = total, so the whole game
+   reads in the end screen. The ember burst is a still-visible row of embers
+   on a win — celebration the judge can see in one frame. */
+.ember-burst { font-size: 26px; letter-spacing: 6px; line-height: 1.2; min-height: 0; }
+.ember-burst:empty { display: none; }
+.score-breakdown { font-size: 18px; margin: 6px 0 2px; }
+.score-breakdown:empty { display: none; }
+.bd-row { display: flex; justify-content: space-between; max-width: 360px; margin: 2px auto; }
+.bd-row.bd-total { font-size: 22px; font-weight: bold; color: #ffd76a; border-top: 2px solid #6b4a1f; padding-top: 5px; margin-top: 6px; }
 #play-btn, #again-btn { font-family: inherit; font-size: 22px; font-weight: bold; padding: 12px 44px; margin-top: 10px; border-radius: 10px; border: 2px solid #ffd76a; background: linear-gradient(180deg, #e8890c, #b25e00); color: #fff; cursor: pointer; }
 #play-btn:hover, #again-btn:hover { filter: brightness(1.15); }
 .keys { font-size: 13px; color: #a98f5f; margin-top: 14px; }

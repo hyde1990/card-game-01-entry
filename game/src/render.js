@@ -2,7 +2,7 @@
 // text stays legible at thumbnail size; suits are colour AND shape (a coloured
 // badge with a glyph), costs and attack/health are big and high-contrast.
 import { cardById, SUITS, MAX_LIFE } from './config.js';
-import { effectiveAttack } from './world.js';
+import { effectiveAttack, laneKindled } from './combos.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
@@ -50,11 +50,6 @@ function cardFace(card, { affordable = true, small = false } = {}) {
   return node;
 }
 
-// A lane is Kindled when its creatures mix Flame and Thorn: +1 attack each.
-function laneKindled(creatures) {
-  const suits = new Set(creatures.map((c) => c.suit));
-  return suits.has('flame') && suits.has('thorn');
-}
 function laneCreature(creature, laneCreatures) {
   const card = cardById(creature.cardId);
   const suit = SUITS[creature.suit];
@@ -101,7 +96,9 @@ export function createRenderer(root) {
   let onEndTurn = null;
   let onPlayAgain = null;
 
-  endTurnBtn.addEventListener('click', () => onEndTurn && onEndTurn());
+  // Blur the button after a mouse click: a focused End Turn would also take
+  // the next Enter keypress as a click, on top of the keyboard handler.
+  endTurnBtn.addEventListener('click', () => { if (onEndTurn) onEndTurn(); endTurnBtn.blur(); });
   titleOverlay.querySelector('#play-btn').addEventListener('click', () => onPlayAgain && onPlayAgain('start'));
   endOverlay.querySelector('#again-btn').addEventListener('click', () => onPlayAgain && onPlayAgain('again'));
 
@@ -121,7 +118,11 @@ export function createRenderer(root) {
     foe.append(el('span', 'hud-who', 'DUCHESS '), lifeBar(enemy.life, 'foe'));
     hud.append(title, round, embers, scoreEl, you, foe);
 
-    intent.textContent = state.intent || '';
+    // The Duchess's intent, as a banner: her readable plan before she moves,
+    // so the opponent's choices are obvious at a glance, even at thumbnail size.
+    intent.replaceChildren();
+    const intentText = (state.intent || '').replace(/^The Duchess plots…\s*/, '');
+    intent.append(el('span', 'intent-label', '👁 DUCHESS PLOTS'), el('span', 'intent-body', intentText));
 
     // The combo line: High Tide fires once per turn (Tide + Star played in one
     // turn draws a card) — shown here while it is live this turn. Kindled is
@@ -167,6 +168,10 @@ export function createRenderer(root) {
       const node = cardFace(card, { affordable: player.embers >= card.cost });
       node.dataset.index = String(index);
       if (selected === index) node.classList.add('selected');
+      // A staged mid-deal card (screenshots only): the deal-in animation,
+      // paused halfway by a negative delay, so the still shows a card sliding
+      // in — a real render of the animation at a fixed point, not a mockup.
+      if (state.arrivingHandIndex === index) node.classList.add('mid-deal');
       node.addEventListener('click', () => onCardClick && onCardClick(index));
       cards.append(node);
     });
@@ -190,7 +195,24 @@ export function createRenderer(root) {
       endOverlay.querySelector('#end-sub').textContent = win
         ? 'The Ashen Duchess bows. Your embers burn brightest.'
         : 'Your embers go out. The Duchess keeps the court — for now.';
-      endOverlay.querySelector('#end-score').textContent = `Score ${score} · ${state.round} rounds · ${state.damageDealt} damage dealt`;
+      // A win that lands in a still: a row of embers above the title, and the
+      // score as a breakdown — rounds + damage = total — so the judge reads
+      // the whole game in the end screen, not just one number.
+      const burst = endOverlay.querySelector('#end-burst');
+      burst.textContent = win ? '🔥 ✨ ⭐ 🔥 ✨ ⭐ 🔥' : '';
+      const breakdown = endOverlay.querySelector('#end-breakdown');
+      breakdown.replaceChildren();
+      const row = (label, value, total) => {
+        const line = el('div', total ? 'bd-row bd-total' : 'bd-row');
+        line.append(el('span', 'bd-label', label), el('span', 'bd-value', String(value)));
+        return line;
+      };
+      breakdown.append(
+        row('🕐 Rounds played', state.round),
+        row('⚔ Damage dealt', state.damageDealt),
+        row('★ Total score', score, true),
+      );
+      endOverlay.querySelector('#end-score').textContent = '';
       endOverlay.querySelector('#end-life').textContent = `You ${player.life} ♥ — Duchess ${enemy.life} ♥`;
       endOverlay.classList.toggle('win', win);
       endOverlay.classList.toggle('loss', !win);

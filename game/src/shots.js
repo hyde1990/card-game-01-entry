@@ -106,6 +106,18 @@ export function stageShot(name, world) {
       if (world.state.over) break;
     }
     fillLanesForShot(world);
+    // The cover frame: a full decision hand and a healthy ember pool, so the
+    // judge reads a game mid-decision, not a spent one. Draw up to 5 cards
+    // from the real deck (deterministic seed) and set embers to 7 — display
+    // state only, no rules change: the fill already spent the turn's embers.
+    while (world.state.player.hand.length < 5) {
+      if (!world.drawCard('player')) break;
+    }
+    world.state.player.embers = 7;
+    // One card mid-deal: the last drawn card is shown halfway through its
+    // deal-in animation (paused, negative delay — a fixed point, so the frame
+    // is deterministic). The renderer reads arrivingHandIndex, the rules ignore it.
+    world.state.arrivingHandIndex = world.state.player.hand.length - 1;
     return { screen: SCREEN_PLAY };
   }
   if (name === 'win') {

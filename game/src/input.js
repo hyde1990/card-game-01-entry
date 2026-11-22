@@ -23,6 +23,11 @@ export function createInput(callbacks) {
       return;
     }
     if (key === 'Enter') {
+      // A focused End Turn button fires its own click on Enter: if the key
+      // handler also ended the turn, one keypress advanced two rounds. Let
+      // the button's click own the action while it has focus; the key path
+      // only acts when nothing focusable owns the keypress.
+      if (document.activeElement && document.activeElement.id === 'end-turn') return;
       callbacks.onEndTurn();
       return;
     }
